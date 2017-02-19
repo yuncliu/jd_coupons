@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import requests
+import time
 from bs4 import BeautifulSoup
 import re
 
@@ -21,7 +22,7 @@ class Coupon:
             print(e)
 
     def __str__(self):
-        return "满{0}减{1} [{2}][{3}]".format(self.limit, self.reduce, self.item_range, self.coupon_id)
+        return "[{3}]满{0}减{1} [{2}]".format(self.limit, self.reduce, self.item_range, self.coupon_id)
 
 def GetCouponsFromHtml(html):
     """
@@ -40,6 +41,7 @@ def GetAllCoupons():
         couponList = GetCouponsFromHtml(page.text)
         for coupon in couponList:
             yield i, coupon
+        time.sleep(1)
 
 
 if __name__ == '__main__':

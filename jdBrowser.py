@@ -6,17 +6,19 @@ from selenium.common.exceptions import NoSuchElementException
 
 
 class JdBrowser(threading.Thread):
-    def __init__(self):
+    def __init__(self, username, password):
         threading.Thread.__init__(self)
         self.queue = queue.Queue()
         self.driver = webdriver.PhantomJS()
         self.driver.set_window_size(1280, 960)
+        self.user = username
+        self.pwd = password
 
     def jd_login(self):
         self.driver.get("https://passport.jd.com/new/login.aspx")
         self.driver.find_element_by_link_text('账户登录').click()
-        self.driver.find_element_by_id("loginname").send_keys('')
-        self.driver.find_element_by_id("nloginpwd").send_keys("")
+        self.driver.find_element_by_id("loginname").send_keys(self.user)
+        self.driver.find_element_by_id("nloginpwd").send_keys(self.pwd)
         is_auth_need = True
         try:
             self.driver.find_element_by_id("authcode")
@@ -39,17 +41,27 @@ class JdBrowser(threading.Thread):
             self.driver.get('https://a.jd.com/coupons.html?page={0}'.format(page))
             self.driver.save_screenshot('coupon_page_{0}.png'.format(page))
             coupon = self.driver.find_element_by_id(divid)
-            btn = coupon.find_element_by_class_name('get-coupon')
-            print(btn)
+
+            btn = coupon.find_element_by_tag_name('a')
+            print('Button Text is [{0}]'.format(btn.text))
+            if btn.text.strip()=='今日已领完':
+                print('[{0}] not available'.format(divid))
+                return False
+
+            if btn.text.strip() == "立即使用":
+                print('[{0}] already got'.format(divid))
+                return False
+
             btn.click()
             time.sleep(1)
             self.driver.save_screenshot('{0}.png'.format(divid))
-
             print('page [{0}] id [{1}] coupon get success'.format(page, divid))
-            return True
         except Exception as e:
             print(e)
             return False
+
+        return True
+
     def put_job(self, page, divid):
         self.queue.put((page,divid))
 

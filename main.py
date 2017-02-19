@@ -20,7 +20,7 @@ def get_list_from_db():
 
 
 if __name__ == '__main__':
-    browser = JdBrowser()
+    browser = JdBrowser('', '')
     browser.start()
     db.execute('CREATE TABLE IF NOT EXISTS coupons(coupon_id TEXT,climit INTEGER, reduce INTEGER, page INTEGER, item_range TEXT);')
 
