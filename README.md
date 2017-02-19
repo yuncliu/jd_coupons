@@ -12,3 +12,10 @@ pip3 install requests
 http://phantomjs.org/download.html
 
 下载后放在环境变量PATH中即可
+
+
+## 配置
+
+账号和密码配置再config.py中
+
+规则也配置在config.py中
