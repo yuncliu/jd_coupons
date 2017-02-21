@@ -4,6 +4,7 @@ import requests
 import time
 from bs4 import BeautifulSoup
 import re
+headers = { "User-Agent":"User-Agent: Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"}
 
 class Coupon:
     def __init__(self, html):
@@ -36,11 +37,17 @@ def GetCouponsFromHtml(html):
     return coupons
 
 def GetAllCoupons():
+    s = requests.Session()
+    url="http://a.jd.com/coupons.html?page={0}"
     for i in range(1, 101):
-        page = requests.get("http://a.jd.com/coupons.html?page={0}".format(i));
-        couponList = GetCouponsFromHtml(page.text)
-        for coupon in couponList:
-            yield i, coupon
+        try:
+            page = s.get(url.format(i), headers = headers);
+            couponList = GetCouponsFromHtml(page.text)
+            for coupon in couponList:
+                yield i, coupon
+        except Exception as e:
+            print(e)
+            break
         time.sleep(1)
 
 
