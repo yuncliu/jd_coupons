@@ -1,9 +1,9 @@
 import threading
 import queue
 import time
+import sqlite3
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-
 
 class JdBrowser(threading.Thread):
     def __init__(self, username, password):
@@ -14,7 +14,17 @@ class JdBrowser(threading.Thread):
         self.user = username
         self.pwd = password
 
+    def get_list_from_db(self):
+        cur = self.db.execute('select coupon_id from coupons')
+        return [x[0] for x in cur]
+
+    def insert_into_db(self, coupon_id):
+        sql = "INSERT INTO coupons VALUES('{0}');"
+        self.db.execute(sql.format(coupon_id))
+        self.db.commit()
+
     def jd_login(self):
+        print('开始登陆京东')
         self.driver.get("https://passport.jd.com/new/login.aspx")
         self.driver.find_element_by_link_text('账户登录').click()
         self.driver.find_element_by_id("loginname").send_keys(self.user)
@@ -25,7 +35,7 @@ class JdBrowser(threading.Thread):
             self.driver.find_element_by_class_name('verify-ycode')
         except NoSuchElementException:
             is_auth_need = False
-            print('not need to input authcode')
+            print('不需要输入验证码')
         if not is_auth_need:
             self.driver.find_element_by_id("loginsubmit").click()
             time.sleep(3)
@@ -34,6 +44,7 @@ class JdBrowser(threading.Thread):
         if current_url != 'https://www.jd.com/':
             self.driver.save_screenshot('login_failure.png')
             return False
+        print('登陆京东成功')
         return True
 
     def get_coupon(self, page, divid):
@@ -45,11 +56,12 @@ class JdBrowser(threading.Thread):
             btn = coupon.find_element_by_tag_name('a')
             print('Button Text is [{0}]'.format(btn.text))
             if btn.text.strip()=='今日已领完':
-                print('[{0}] not available'.format(divid))
+                print('[{0}] 今日已领完'.format(divid))
                 return False
 
             if btn.text.strip() == "立即使用":
                 print('[{0}] already got'.format(divid))
+                self.insert_into_db(divid)
                 return False
 
             btn.click()
@@ -72,14 +84,19 @@ class JdBrowser(threading.Thread):
         if not self.jd_login():
             print('jd login failure')
             return
+        self.db = sqlite3.connect('coupon.db')
+        self.db.execute('CREATE TABLE IF NOT EXISTS coupons(coupon_id TEXT);')
         while True:
             (page, divid) = self.queue.get(block=True)
             if page == -1 or divid == 'shutdown':
                 print('browser thread exiting')
                 break
             print('page [{0}] id[{1}]'.format(page, divid))
-            self.get_coupon(page, divid)
-
+            if divid not in self.get_list_from_db():
+                self.get_coupon(page, divid)
+                time.sleep(3)
+            else:
+                print('[{0}]已领'.format(divid))
 
 if __name__ == '__main__':
     q = queue.Queue()
