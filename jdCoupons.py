@@ -10,14 +10,14 @@ class Coupon:
     def __init__(self, html):
         try:
             self.coupon_id = html.attrs['id']
-            self.reduce   = int(html.strong.text);
+            self.reduce   = float(html.strong.text);
             self.limit = html.span.text.strip();
             self.item_range = html.p.text
             x = re.match("满(.*)元可用", self.limit)
             if x is None:
                 self.limit = 0
             else:
-                self.limit = int(x.group(1))
+                self.limit = float(x.group(1))
         except Exception as e:
             print(html)
             print(e)
